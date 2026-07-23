@@ -6,7 +6,8 @@
 
 namespace ccscript{
 
-Variant::Variant(Null){
+Variant::Variant(Null value){
+    data_.null_value=value;
     data_.type_index=TypeIndex::TI_NULL;
 }
 
@@ -290,17 +291,43 @@ bool Variant::is_type_of(TypeIndex type_index)const{
     return get_type_index()==type_index;
 }
 
+Variant::Variant(TypeIndex type_index){
+    if(type_index==TypeIndex::TI_NULL){
+        data_.null_value={};
+    }else if(type_index==TypeIndex::TI_BOOLEAN){
+        data_.boolean_value=false;
+    }else if(type_index==TypeIndex::TI_NUMBER){
+        data_.number_value=0.0;
+    }else{
+        void* ptr=nullptr;
+        if(type_index==TypeIndex::TI_STRING){
+            ptr=new(std::nothrow) String{};
+        }else if(type_index==TypeIndex::TI_ARRAY){
+            ptr=new(std::nothrow) Array{};
+        }else{//if(type_index==TypeIndex::TI_OBJECT)
+            ptr=new(std::nothrow) Object{};
+        }
+        if(!ptr){
+            throw Exception("bad alloc");
+        }
+        data_.nopod_value=ptr;
+    }
+    data_.type_index=type_index;
+}
+
 bool Variant::is_pod(void)const{
     return is_null() || is_boolean() || is_number();
 }
 
 void Variant::reset(void){
-    if(is_string()){
-        delete reinterpret_cast<String*>(data_.nopod_value);
-    }else if(is_array()){
-        delete reinterpret_cast<Array*>(data_.nopod_value);
-    }else if(is_object()){
-        delete reinterpret_cast<Object*>(data_.nopod_value);
+    if(!is_pod()&&data_.nopod_value){
+        if(is_string()){
+            delete reinterpret_cast<String*>(data_.nopod_value);
+        }else if(is_array()){
+            delete reinterpret_cast<Array*>(data_.nopod_value);
+        }else{//if(is_object())
+            delete reinterpret_cast<Object*>(data_.nopod_value);
+        }
     }
     data_.nopod_value=nullptr;
     data_.type_index=TypeIndex::TI_NULL;

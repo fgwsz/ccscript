@@ -52,6 +52,7 @@ public:
     //类型下标
     TypeIndex get_type_index(void)const;
     bool is_type_of(TypeIndex)const;
+    Variant(TypeIndex);
 private:
     struct{
         TypeIndex type_index;
