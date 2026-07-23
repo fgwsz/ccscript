@@ -7,18 +7,18 @@ int main(int argc,char* argv[]){
     using namespace ccscript;
     try{
         Variant var=Object{
-            {String{"null"},Null{}},
-            {String{"boolean"},Boolean{false}},
-            {String{"number"},Number{3.14}},
-            {String{"string"},String{"hello world"}},
-            {String{"array"},
-                Array{
-                    Null{},
-                    Boolean{true},
-                    Number{6.28},
-                    String{"ha ha!"}
+            {"null",null},
+            {"boolean",true},
+            {"number",3.14},
+            {"string","hello world"},
+            {"array",
+                {
+                    null,
+                    false,
+                    100,
+                    "ha ha!"
                 }
-            },
+            }
         };
         Variant str(TypeIndex::TI_STRING);
         str.get_string()="str = abc\n";

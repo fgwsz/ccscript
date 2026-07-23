@@ -8,8 +8,12 @@ namespace ccscript{
 
 //基本类型
 struct Null{};
-using Boolean=bool;
-using Number=double;
+inline Null null;
+enum class Boolean{
+    FALSE=0,
+    TRUE=1
+};
+using Number=long double;
 using String=std::string;
 
 //复合类型

@@ -53,6 +53,12 @@ public:
     TypeIndex get_type_index(void)const;
     bool is_type_of(TypeIndex)const;
     Variant(TypeIndex);
+    //针对字面量
+    Variant(bool);
+    Variant(int);
+    Variant(double);
+    Variant(char const*);
+    Variant(std::initializer_list<Variant>);
 private:
     struct{
         TypeIndex type_index;

@@ -1,4 +1,4 @@
-#include<new>
+#include<new>//std::nothrow
 
 #include<ccscript/exception.hpp>
 
@@ -22,7 +22,8 @@ Variant::Variant(Number value){
 }
 
 Variant::Variant(String const& value){
-    auto* ptr=new(std::nothrow) String{value};
+    void* ptr=nullptr;
+    ptr=new(std::nothrow) String{value};
     if(!ptr){
         throw Exception("bad alloc");
     }
@@ -31,7 +32,8 @@ Variant::Variant(String const& value){
 }
 
 Variant::Variant(Array const& value){
-    auto* ptr=new(std::nothrow) Array{value};
+    void* ptr=nullptr;
+    ptr=new(std::nothrow) Array{value};
     if(!ptr){
         throw Exception("bad alloc");
     }
@@ -40,7 +42,8 @@ Variant::Variant(Array const& value){
 }
 
 Variant::Variant(Object const& value){
-    auto* ptr=new(std::nothrow) Object{value};
+    void* ptr=nullptr;
+    ptr=new(std::nothrow) Object{value};
     if(!ptr){
         throw Exception("bad alloc");
     }
@@ -54,7 +57,14 @@ Variant::Variant(void)
 
 Variant::Variant(Variant const& variant){
     if(variant.is_pod()){
-        data_=variant.data_;
+        if(variant.is_null()){
+            data_.null_value=variant.get_null();
+        }else if(variant.is_boolean()){
+            data_.boolean_value=variant.get_boolean();
+        }else{//if(variant.is_number())
+            data_.number_value=variant.get_number();
+        }
+        data_.type_index=variant.get_type_index();
         return;
     }
     void* ptr=nullptr;
@@ -73,8 +83,19 @@ Variant::Variant(Variant const& variant){
 }
 
 Variant::Variant(Variant && variant){
-    data_=variant.data_;
-    variant.reset();
+    if(variant.is_null()){
+        data_.null_value=variant.get_null();
+    }else if(variant.is_boolean()){
+        data_.boolean_value=variant.get_boolean();
+    }else if(variant.is_number()){
+        data_.number_value=variant.get_number();
+    }else{
+        data_.nopod_value=variant.data_.nopod_value;
+        variant.data_.nopod_value=nullptr;
+    }
+    data_.type_index=variant.get_type_index();
+    variant.data_.null_value={};
+    variant.data_.type_index=TypeIndex::TI_NULL;
 }
 
 Variant& Variant::operator=(Variant const& variant){
@@ -85,7 +106,14 @@ Variant& Variant::operator=(Variant const& variant){
         if(!is_pod()){
             reset();
         }
-        data_=variant.data_;
+        if(variant.is_null()){
+            data_.null_value=variant.get_null();
+        }else if(variant.is_boolean()){
+            data_.boolean_value=variant.get_boolean();
+        }else{//if(variant.is_number())
+            data_.number_value=variant.get_number();
+        }
+        data_.type_index=variant.get_type_index();
         return *this;
     }
     if(get_type_index()==variant.get_type_index()){
@@ -124,8 +152,19 @@ Variant& Variant::operator=(Variant && variant){
     if(!is_pod()){
         reset();
     }
-    data_=variant.data_;
-    variant.reset();
+    if(variant.is_null()){
+        data_.null_value=variant.get_null();
+    }else if(variant.is_boolean()){
+        data_.boolean_value=variant.get_boolean();
+    }else if(variant.is_number()){
+        data_.number_value=variant.get_number();
+    }else{
+        data_.nopod_value=variant.data_.nopod_value;
+        variant.data_.nopod_value=nullptr;
+    }
+    data_.type_index=variant.get_type_index();
+    variant.data_.null_value={};
+    variant.data_.type_index=TypeIndex::TI_NULL;
     return *this;
 }
 
@@ -295,7 +334,7 @@ Variant::Variant(TypeIndex type_index){
     if(type_index==TypeIndex::TI_NULL){
         data_.null_value={};
     }else if(type_index==TypeIndex::TI_BOOLEAN){
-        data_.boolean_value=false;
+        data_.boolean_value=Boolean::FALSE;
     }else if(type_index==TypeIndex::TI_NUMBER){
         data_.number_value=0.0;
     }else{
@@ -315,6 +354,26 @@ Variant::Variant(TypeIndex type_index){
     data_.type_index=type_index;
 }
 
+Variant::Variant(bool value)
+    :Variant(value?Boolean::TRUE:Boolean::FALSE)
+{}
+
+Variant::Variant(int value)
+    :Variant(static_cast<Number>(value))
+{}
+
+Variant::Variant(double value)
+    :Variant(static_cast<Number>(value))
+{}
+
+Variant::Variant(char const* c_str)
+    :Variant(String{c_str})
+{}
+
+Variant::Variant(std::initializer_list<Variant> list)
+    :Variant(Array{list})
+{}
+
 bool Variant::is_pod(void)const{
     return is_null() || is_boolean() || is_number();
 }
@@ -328,8 +387,9 @@ void Variant::reset(void){
         }else{//if(is_object())
             delete reinterpret_cast<Object*>(data_.nopod_value);
         }
+        data_.nopod_value=nullptr;
     }
-    data_.nopod_value=nullptr;
+    data_.null_value={};
     data_.type_index=TypeIndex::TI_NULL;
 }
 
