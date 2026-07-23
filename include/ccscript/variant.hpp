@@ -35,6 +35,20 @@ public:
     String& get_string(void);
     Array& get_array(void);
     Object& get_object(void);
+
+    Null const& get_null(void)const;
+    Boolean const& get_boolean(void)const;
+    Number const& get_number(void)const;
+    String const& get_string(void)const;
+    Array const& get_array(void)const;
+    Object const& get_object(void)const;
+
+    Null const& get_const_null(void)const;
+    Boolean const& get_const_boolean(void)const;
+    Number const& get_const_number(void)const;
+    String const& get_const_string(void)const;
+    Array const& get_const_array(void)const;
+    Object const& get_const_object(void)const;
     //类型下标
     TypeIndex get_type_index(void)const;
     bool is_type_of(TypeIndex)const;
@@ -48,7 +62,7 @@ private:
             void* nopod_value;
         };
     }data_;
-    bool is_pod(void);
+    bool is_pod(void)const;
     void reset(void);
 };
 

@@ -4,12 +4,13 @@
 
 namespace ccscript{
 
-char const* Exception::what(void)const{
-    return this->what_.c_str();
+char const* Exception::what(void)const noexcept{
+    return what_.c_str();
 }
+
 Exception::Exception(
     std::string_view const message,
-    std::source_location const location=std::source_location::current()
+    std::source_location const location
 ):what_(
     std::format(
         "file: {}({}:{}) `{}`: {}",
