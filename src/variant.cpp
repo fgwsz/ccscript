@@ -6,6 +6,19 @@
 
 #include<ccscript/variant.hpp>
 
+//tip:
+//  GCC编译器下,Array{arr}语句会导致无限递归,(MSVC不会导致无限循环)
+//      必须使用Array(arr)代替Array{arr}语句!!!
+//  原因:
+//  Array{array}
+//  GCC函数匹配规则把{array}解释为包含一个元素的initializer_list<?>
+//  即优先匹配为包含一个元素(值为arr)的initializer_list
+//  但是arr的类型是Array,它可以隐式转换为Variant
+//  所以?是Array还是Variant呢?两种匹配路径都说得通.
+//  如果编译器选择了?=Variant路线.(恰好GCC选择了这条路)
+//  Array{arr}->Variant(Array const&/&& arr)->new Array{arr}
+//      ->Variant(Array const&/&& arr)->...无限循环
+
 namespace ccscript{
 
 Variant::Variant(Null value){
@@ -35,7 +48,7 @@ Variant::Variant(String const& value){
 
 Variant::Variant(Array const& value){
     void* ptr=nullptr;
-    ptr=new(std::nothrow) Array{value};
+    ptr=new(std::nothrow) Array(value);
     if(!ptr){
         throw Exception("bad alloc");
     }
@@ -65,7 +78,7 @@ Variant::Variant(String && str){
 
 Variant::Variant(Array && arr){
     void* ptr=nullptr;
-    ptr=new(std::nothrow) Array{std::move(arr)};
+    ptr=new(std::nothrow) Array(std::move(arr));
     if(!ptr){
         throw Exception("bad alloc");
     }
@@ -103,7 +116,7 @@ Variant::Variant(Variant const& variant){
     if(variant.is_string()){
         ptr=new(std::nothrow) String{variant.get_string()};
     }else if(variant.is_array()){
-        ptr=new(std::nothrow) Array{variant.get_array()};
+        ptr=new(std::nothrow) Array(variant.get_array());
     }else{//if(variant.is_object())
         ptr=new(std::nothrow) Object{variant.get_object()};
     }
@@ -165,7 +178,7 @@ Variant& Variant::operator=(Variant const& variant){
     if(variant.is_string()){
         ptr=new(std::nothrow) String{variant.get_string()};
     }else if(variant.is_array()){
-        ptr=new(std::nothrow) Array{variant.get_array()};
+        ptr=new(std::nothrow) Array(variant.get_array());
     }else{//if(variant.is_object())
         ptr=new(std::nothrow) Object{variant.get_object()};
     }
