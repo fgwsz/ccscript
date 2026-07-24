@@ -430,6 +430,47 @@ Variant const& Variant::operator[](std::string_view key)const{
     return get_object().at(String{key});
 }
 
+namespace detail{
+
+std::string string_dump(std::string const& str){
+    static constexpr char hex_digits[]="0123456789ABCDEF";
+    std::string ret;
+    ret.reserve(str.size()*2+2);
+    ret.push_back('"');
+    for(unsigned char ch:str){
+        switch(ch){
+            case '"' :{ret+="\\\"";break;}
+            case '\\':{ret+="\\\\";break;}
+            case '/' :{ret+="\\/"; break;}
+            case '\b':{ret+="\\b"; break;}
+            case '\f':{ret+="\\f"; break;}
+            case '\n':{ret+="\\n"; break;}
+            case '\r':{ret+="\\r"; break;}
+            case '\t':{ret+="\\t"; break;}
+            default:{
+                if(ch<0x20){//控制字符(0x00-0x1F)==>"\uXXXX"
+                    ret+="\\u";
+                    ret+=hex_digits[(ch>>12)&0x0F]; //高4位
+                    ret+=hex_digits[(ch>>8)&0x0F];  //次高4位
+                    ret+=hex_digits[(ch>>4)&0x0F];  //次低4位
+                    ret+=hex_digits[ch&0x0F];       //低4位
+                }else{
+                    ret.push_back(static_cast<char>(ch));
+                }
+            }
+        }
+    }
+    ret.push_back('"');
+    return ret;
+}
+
+std::string number_dump(long double num){
+    return std::format("{:g}",num);
+}
+
+}//namespace detail
+
+
 std::string Variant::to_string(void)const{
     if(is_null()){
         return "null";
@@ -438,9 +479,9 @@ std::string Variant::to_string(void)const{
             ?"true"
             :"false";
     }else if(is_number()){
-        return std::to_string(get_number());
+        return detail::number_dump(get_number());
     }else if(is_string()){
-        return std::format("\"{}\"",get_string());
+        return detail::string_dump(get_string());
     }else if(is_array()){
         std::string ret={"["};
         for(auto const& element:get_array()){
@@ -452,7 +493,9 @@ std::string Variant::to_string(void)const{
     }else{//if(is_object())
         std::string ret={"{"};
         for(auto const& [key,value]:get_object()){
-            ret+=std::format("\"{}\":{},",key,value.to_string());
+            ret+=std::format(
+                "{}:{},",detail::string_dump(key),value.to_string()
+            );
         }
         ret.pop_back();//remove last ','
         ret+="}";

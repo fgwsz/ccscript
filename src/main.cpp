@@ -36,12 +36,12 @@ int main(int argc,char* argv[]){
         }
 
         Variant obj=Object{
-            {"null",null},
-            {"boolean",true},
-            {"number",3.14},
-            {"string","hello"},
-            {"array",Array{1,2,3}},
-            {"object",Object{{"name","Tom"},{"age",20}}}
+            {"\"null",null},
+            {"\\boolean",true},
+            {"/number",-3.14e2},
+            {"\bstring","\fhello"},
+            {"\narray",Array{1,2,3}},
+            {"\robject",Object{{"\tname","Tom"},{"age",20}}}
         };
         std::cout<<obj.to_string()<<'\n';
 
