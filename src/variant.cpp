@@ -1,4 +1,6 @@
-#include<new>//std::nothrow
+#include<new>       //std::nothrow
+#include<utility>   //std::move
+#include<format>    //std::format
 
 #include<ccscript/exception.hpp>
 
@@ -44,6 +46,36 @@ Variant::Variant(Array const& value){
 Variant::Variant(Object const& value){
     void* ptr=nullptr;
     ptr=new(std::nothrow) Object{value};
+    if(!ptr){
+        throw Exception("bad alloc");
+    }
+    data_.nopod_value=ptr;
+    data_.type_index=TypeIndex::TI_OBJECT;
+}
+
+Variant::Variant(String && str){
+    void* ptr=nullptr;
+    ptr=new(std::nothrow) String{std::move(str)};
+    if(!ptr){
+        throw Exception("bad alloc");
+    }
+    data_.nopod_value=ptr;
+    data_.type_index=TypeIndex::TI_STRING;
+}
+
+Variant::Variant(Array && arr){
+    void* ptr=nullptr;
+    ptr=new(std::nothrow) Array{std::move(arr)};
+    if(!ptr){
+        throw Exception("bad alloc");
+    }
+    data_.nopod_value=ptr;
+    data_.type_index=TypeIndex::TI_ARRAY;
+}
+
+Variant::Variant(Object && obj){
+    void* ptr=nullptr;
+    ptr=new(std::nothrow) Object{std::move(obj)};
     if(!ptr){
         throw Exception("bad alloc");
     }
@@ -370,9 +402,63 @@ Variant::Variant(char const* c_str)
     :Variant(String{c_str})
 {}
 
-Variant::Variant(std::initializer_list<Variant> list)
-    :Variant(Array{list})
-{}
+Variant& Variant::operator[](std::size_t index){
+    if(!is_array()){
+        throw Exception("type error");
+    }
+    return get_array().at(index);
+}
+
+Variant& Variant::operator[](std::string_view key){
+    if(!is_object()){
+        throw Exception("type error");
+    }
+    return get_object().at(String{key});
+}
+
+Variant const& Variant::operator[](std::size_t index)const{
+    if(!is_array()){
+        throw Exception("type error");
+    }
+    return get_array().at(index);
+}
+
+Variant const& Variant::operator[](std::string_view key)const{
+    if(!is_object()){
+        throw Exception("type error");
+    }
+    return get_object().at(String{key});
+}
+
+std::string Variant::to_string(void)const{
+    if(is_null()){
+        return "null";
+    }else if(is_boolean()){
+        return get_boolean()==Boolean::TRUE
+            ?"true"
+            :"false";
+    }else if(is_number()){
+        return std::to_string(get_number());
+    }else if(is_string()){
+        return std::format("\"{}\"",get_string());
+    }else if(is_array()){
+        std::string ret={"["};
+        for(auto const& element:get_array()){
+            ret+=element.to_string()+",";
+        }
+        ret.pop_back();//remove last ','
+        ret+="]";
+        return ret;
+    }else{//if(is_object())
+        std::string ret={"{"};
+        for(auto const& [key,value]:get_object()){
+            ret+=std::format("\"{}\":{},",key,value.to_string());
+        }
+        ret.pop_back();//remove last ','
+        ret+="}";
+        return ret;
+    }
+}
 
 bool Variant::is_pod(void)const{
     return is_null() || is_boolean() || is_number();

@@ -1,5 +1,9 @@
 #pragma once
 
+#include<cstddef>       //std::size_t
+#include<string_view>   //std::string_view
+#include<string>        //std::string
+
 #include<ccscript/type.hpp>
 #include<ccscript/type_index.hpp>
 
@@ -11,9 +15,14 @@ public:
     Variant(Null);
     Variant(Boolean);
     Variant(Number);
+
     Variant(String const&);
     Variant(Array const&);
     Variant(Object const&);
+
+    Variant(String &&);
+    Variant(Array &&);
+    Variant(Object &&);
     //生命周期
     Variant(void);
     Variant(Variant const&);
@@ -58,7 +67,14 @@ public:
     Variant(int);
     Variant(double);
     Variant(char const*);
-    Variant(std::initializer_list<Variant>);
+    //元素访问
+    Variant& operator[](std::size_t index);
+    Variant& operator[](std::string_view key);
+
+    Variant const& operator[](std::size_t index)const;
+    Variant const& operator[](std::string_view key)const;
+    //打印相关
+    std::string to_string(void)const;
 private:
     struct{
         TypeIndex type_index;
